@@ -1,0 +1,73 @@
+name: apex-local
+
+services:
+  oraclefree:
+    image: container-registry.oracle.com/database/free:latest
+    ports:
+      - "1521:1521"
+    env_file:
+      - ./setup/ords.env
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "/opt/oracle/scripts/base/checkDBStatus.sh"]
+      interval: 10s
+      timeout: 30s
+      retries: 20
+      start_period: 5m
+
+  ords:
+    image: container-registry.oracle.com/database/ords:latest
+    env_file:
+      - ./setup/ords.env
+    environment:
+      DBHOST: oraclefree
+      DBPORT: "1521"
+      DBSERVICENAME: FREEPDB1
+      NLS_LANG: AMERICAN_AMERICA.AL32UTF8
+    depends_on:
+      oraclefree:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ords_config:/etc/ords/config
+      - type: bind
+        source: ./setup/apex
+        target: /opt/oracle/apex
+        bind:
+          create_host_path: false
+      - ./setup/ords-entrypoint.d:/ords-entrypoint.d:ro
+    healthcheck:
+      test:
+        - CMD
+        - /bin/bash
+        - -ec
+        - test -f /etc/ords/config/.apex-de-26.2.0-configured && test -f /etc/ords/config/.apex-smtp-configured && true > /dev/tcp/127.0.0.1/8080
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30m
+
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: "1000"
+    ports:
+      - "127.0.0.1:8025:8025"
+    volumes:
+      - mailpit_data:/data
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mailpit_data:
+  oracle_data:
+  ords_config:
