@@ -1,6 +1,8 @@
-# Oracle Free, ORDS, and APEX 26.2
+# Local APEX
 
-This Compose project is named `apex-local`. It runs Oracle Database Free,
+[![Installation smoke test](https://github.com/silas229/local-apex/actions/workflows/installation-smoke-test.yml/badge.svg)](https://github.com/silas229/local-apex/actions/workflows/installation-smoke-test.yml)
+
+This Compose project runs Oracle Database Free,
 ORDS, APEX, and Mailpit locally. The first installation can take 20-30 minutes.
 
 ## Prerequisites
